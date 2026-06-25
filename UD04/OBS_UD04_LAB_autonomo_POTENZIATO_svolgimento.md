@@ -21,7 +21,7 @@ Prepariamo ambiente pulito:
 
 ```bash
 mkdir -p logs evidence docs
-: > logs/app.log
+: > logs/app.log       # questo comando crea oppure svuota il file app.log
 chmod 755 src/generate_traffic.sh src/verifica_ud04.sh
 ```
 
