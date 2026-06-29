@@ -27,7 +27,7 @@ non eliminare le risorse a fine UD05
 
 ## 2. Avviso operativo prima della pratica
 
-Prima di creare risorse leggere e confermare:
+Ricordare che:
 
 ```text
 Le risorse create oggi servono per la UD06.
@@ -37,11 +37,6 @@ La VM può essere fermata/deallocata solo se indicato dal docente.
 Il cleanup definitivo verrà deciso dopo la UD06.
 ```
 
-Scrivere nel report:
-
-```text
-Ho compreso che le risorse UD05 devono restare disponibili per UD06: Sì/No
-```
 
 ---
 
@@ -631,7 +626,12 @@ export VM_NAME="vm-obs-ud05-<codice>"
 
 az vm show   --name "$VM_NAME"   --resource-group "$RG_NAME"   --output json > evidence/ud05_vm.json
 ```
+**Attenzione:**
+per evitare errore di versione più recente del modulo AZ CLI, è possibile utilizzare il seguente comando:
 
+```bash
+az vm list -g "$RG_NAME" -o json > evidence/ud05_vm.json
+```
 Per ottenere una vista sintetica dello stato della VM:
 
 ```bash
