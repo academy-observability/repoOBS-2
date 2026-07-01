@@ -250,7 +250,7 @@ Storage Account
 → Monitoring
 → Metrics
 → Metric: Transactions
-→ Aggregation: Total
+→ Aggregation: Sum
 → Time range: Last hour
 ```
 
