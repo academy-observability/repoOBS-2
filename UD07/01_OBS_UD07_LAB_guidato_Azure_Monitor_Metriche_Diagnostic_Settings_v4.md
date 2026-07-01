@@ -230,7 +230,7 @@ App Service
 → Monitoring
 → Metrics
 → Metric: Requests
-→ Aggregation: Total
+→ Aggregation: Count
 → Time range: Last hour
 ```
 
