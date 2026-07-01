@@ -63,7 +63,7 @@ Scegliere uno scenario tra i seguenti.
 | C | VM | la VM mostra carico CPU dopo workload controllato? |
 | D | Risorsa core | Activity Log registra modifiche amministrative? |
 
-Scegliere uno o più scenari secono il tempo a disposizione.
+Scegliere uno o più scenari secondo il tempo a disposizione.
 
 ## 5. Creare il report autonomo
 
