@@ -104,7 +104,7 @@ az monitor metrics list \
   --aggregation Total
 ```
 
-`--interval PT1M` indica la granularità dei punti restituiti, non significa automaticamente “ultimi 1 minuto”. Il time range complessivo può essere implicito o specificato con parametri aggiuntivi, a seconda del comando usato.
+`--interval PT1M` indica la granularità dei punti restituiti, non significa automaticamente “ultimi **1 minuto**”. Il time range complessivo può essere implicito o specificato con parametri aggiuntivi, a seconda del comando usato.
 
 Questa distinzione è piccola, ma ha già rovinato più report di quanto sia socialmente accettabile.
 
