@@ -189,11 +189,21 @@ export STORAGE_ID="$(az storage account show \
   --query id \
   --output tsv 2>/dev/null || true)"
 
-export APP_ID="$(az webapp show \
-  --name "$APP_NAME" \
+# Recupera automaticamente la prima Web App presente nel Resource Group.
+# Nel laboratorio UD07 ce n'è una sola.
+export APP_NAME="$(az resource list \
   --resource-group "$RG_NAME" \
-  --query id \
-  --output tsv 2>/dev/null || true)"
+  --resource-type "Microsoft.Web/sites" \
+  --query "[0].name" \
+  --output tsv)"
+
+# Recupera il Resource ID della Web App.
+export APP_ID="$(az resource list \
+  --resource-group "$RG_NAME" \
+  --resource-type "Microsoft.Web/sites" \
+  --query "[0].id" \
+  --output tsv)"
+
 
 export VM_ID="$(az vm show \
   --name "$VM_NAME" \
