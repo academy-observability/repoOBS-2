@@ -63,7 +63,7 @@ Scegliere uno scenario tra i seguenti.
 | C | VM | la VM mostra carico CPU dopo workload controllato? |
 | D | Risorsa core | Activity Log registra modifiche amministrative? |
 
-Non scegliere tutto. Scegliere bene. Il “faccio tutto” è spesso il modo più costoso per non capire niente.
+Scegliere uno o più scenari secono il tempo a disposizione.
 
 ## 5. Creare il report autonomo
 
@@ -240,7 +240,7 @@ img/ud07_autonomo_storage_after.png
 
 ## 8. Scenario C: VM Percentage CPU
 
-Usare solo se la VM è running e il docente autorizza RunCommand.
+Usare solo se la VM è running.
 
 ```bash
 VM_ID="$(az vm show \
