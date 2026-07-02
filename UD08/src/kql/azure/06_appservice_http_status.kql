@@ -1,0 +1,7 @@
+// UD08 - Traffico HTTP App Service, se la tabella resource-specific è presente.
+// Obiettivo: verificare se il traffico applicativo generato nelle UD precedenti è arrivato nel workspace.
+// La tabella dipende dalla configurazione dei log di App Service verso Log Analytics.
+AppServiceHTTPLogs
+| where TimeGenerated > ago(7d)
+| summarize richieste=count(), ultimo_evento=max(TimeGenerated) by ScStatus, CsMethod
+| order by richieste desc

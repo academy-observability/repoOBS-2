@@ -1,0 +1,23 @@
+// UD08 - Query 02
+// Scopo:
+//   Filtrare richieste simulate con codice HTTP >= 400.
+// Valore didattico:
+//   where riduce le righe; project seleziona colonne; sort by ordina il risultato.
+
+let BaseTime = now();
+
+datatable(OffsetMin:int, Service:string, Level:string, Status:int, DurationMs:int, RequestId:string)
+[
+  5, "catalog", "INFO", 200, 120, "req-001",
+  4, "catalog", "ERROR", 500, 450, "req-002",
+  3, "orders", "INFO", 200, 180, "req-003",
+  2, "orders", "WARN", 429, 260, "req-004",
+  1, "payments", "ERROR", 503, 900, "req-005"
+]
+| extend TimeGenerated = BaseTime - OffsetMin * 1m
+// Mantiene solo righe con status HTTP anomalo o di errore.
+| where Status >= 400
+// Mostra solo le colonne utili alla lettura diagnostica.
+| project TimeGenerated, Service, Level, Status, DurationMs, RequestId
+// Porta in alto gli eventi più recenti.
+| sort by TimeGenerated desc
