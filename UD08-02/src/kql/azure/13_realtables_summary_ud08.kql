@@ -1,0 +1,18 @@
+// UD08 - Riepilogo finale delle tabelle reali attese.
+// Obiettivo:
+//   Verificare quali tabelle hanno ricevuto righe recenti dopo la configurazione del laboratorio.
+// Nota:
+//   isfuzzy=true permette alla query di proseguire anche se alcune tabelle non esistono ancora.
+//   withsource=TableName evita di dipendere da una colonna Type non sempre uniforme.
+
+union isfuzzy=true withsource=TableName
+    AzureActivity,
+    StorageBlobLogs,
+    AppServiceHTTPLogs,
+    Heartbeat,
+    Perf,
+    Syslog,
+    Event
+| where TimeGenerated > ago(2h)
+| summarize Righe=count(), UltimoEvento=max(TimeGenerated) by TableName
+| sort by Righe desc

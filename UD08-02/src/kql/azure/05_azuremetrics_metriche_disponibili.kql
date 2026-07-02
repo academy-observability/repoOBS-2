@@ -1,0 +1,7 @@
+// UD08 - Metriche esportate nel Log Analytics Workspace, se presenti.
+// Obiettivo: capire quali metriche reali sono interrogabili con KQL.
+// La tabella AzureMetrics può essere vuota se le metriche non sono state esportate nel workspace.
+AzureMetrics
+| where TimeGenerated > ago(7d)
+| summarize campioni=count(), ultimo_campione=max(TimeGenerated) by ResourceProvider, MetricName, UnitName
+| order by campioni desc

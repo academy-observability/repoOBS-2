@@ -1,0 +1,20 @@
+// UD08 - AzureActivity su risorse delle UD precedenti.
+// Obiettivo:
+//   Mostrare attività amministrative recenti arrivate nel workspace.
+// Uso:
+//   Valorizzare ResourceGroupName se si vuole limitare la query al Resource Group UD05.
+//   Lasciare ResourceGroupName vuoto per leggere tutte le attività recenti visibili.
+
+let ResourceGroupName = "";
+AzureActivity
+| where TimeGenerated > ago(2h)
+| where isempty(ResourceGroupName) or ResourceGroup =~ ResourceGroupName
+| project
+    TimeGenerated,
+    ResourceGroup,
+    OperationNameValue,
+    ActivityStatusValue,
+    ResourceProviderValue,
+    Caller
+| sort by TimeGenerated desc
+| take 30

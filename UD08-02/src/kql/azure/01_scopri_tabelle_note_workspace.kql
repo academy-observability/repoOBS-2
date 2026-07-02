@@ -1,0 +1,29 @@
+// UD08-UD10 - Discovery controllata delle tabelle note nel workspace.
+// Obiettivo:
+//   Capire quali sorgenti reali hanno dati recenti prima di scrivere query diagnostiche.
+// Nota:
+//   isfuzzy=true evita il blocco della query quando alcune tabelle non esistono nel workspace.
+//   withsource=TableName aggiunge il nome della tabella da cui proviene ogni riga.
+
+union isfuzzy=true withsource=TableName
+    Usage,
+    AzureActivity,
+    AzureMetrics,
+    AzureDiagnostics,
+    StorageBlobLogs,
+    StorageFileLogs,
+    StorageQueueLogs,
+    StorageTableLogs,
+    AppServiceHTTPLogs,
+    AppServiceAppLogs,
+    AppServiceConsoleLogs,
+    AppServiceAuditLogs,
+    AppServicePlatformLogs,
+    Heartbeat,
+    Perf,
+    InsightsMetrics,
+    Event,
+    Syslog
+| where TimeGenerated > ago(7d)
+| summarize righe=count(), ultimo_evento=max(TimeGenerated) by TableName
+| order by righe desc

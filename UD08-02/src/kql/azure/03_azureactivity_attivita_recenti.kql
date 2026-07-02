@@ -1,0 +1,14 @@
+// UD08 - Attività amministrative recenti da AzureActivity.
+// Obiettivo: leggere eventi reali generati dalle operazioni eseguite sulle risorse Azure.
+// La tabella è disponibile solo se l'Activity Log è instradato o comunque presente nel workspace.
+AzureActivity
+| where TimeGenerated > ago(7d)
+| project
+    TimeGenerated,
+    ResourceGroup,
+    ResourceProviderValue,
+    OperationNameValue,
+    ActivityStatusValue,
+    Caller
+| order by TimeGenerated desc
+| take 50

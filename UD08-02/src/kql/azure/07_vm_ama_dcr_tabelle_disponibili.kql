@@ -1,0 +1,12 @@
+// UD08 - Tabelle tipiche da VM monitorate con Azure Monitor Agent e Data Collection Rules.
+// Obiettivo: distinguere il percorso moderno AMA/DCR dalla vecchia diagnostica VM legacy.
+// Eseguire questa query dopo avere abilitato VM Insights, Enhanced monitoring o una DCR adeguata.
+union isfuzzy=true withsource=TableName
+    Heartbeat,
+    Perf,
+    InsightsMetrics,
+    Event,
+    Syslog
+| where TimeGenerated > ago(7d)
+| summarize righe=count(), ultimo_evento=max(TimeGenerated) by TableName
+| order by righe desc

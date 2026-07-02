@@ -1,0 +1,22 @@
+// UD08 - StorageBlobLogs sul servizio Blob.
+// Obiettivo:
+//   Mostrare operazioni recenti di lettura, scrittura e cancellazione sui blob.
+// Uso:
+//   Valorizzare StorageAccountName se si vuole filtrare uno Storage Account specifico.
+//   Lasciare StorageAccountName vuoto per leggere tutti i record Blob visibili.
+
+let StorageAccountName = "";
+StorageBlobLogs
+| where TimeGenerated > ago(2h)
+| where isempty(StorageAccountName) or AccountName =~ StorageAccountName
+| project
+    TimeGenerated,
+    AccountName,
+    OperationName,
+    StatusText,
+    DurationMs,
+    Uri,
+    CallerIpAddress,
+    _ResourceId
+| sort by TimeGenerated desc
+| take 50

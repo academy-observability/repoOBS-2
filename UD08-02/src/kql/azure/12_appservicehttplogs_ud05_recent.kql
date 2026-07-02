@@ -1,0 +1,20 @@
+// UD08 - AppServiceHTTPLogs su Web App.
+// Obiettivo:
+//   Mostrare richieste HTTP recenti ricevute dalla Web App.
+// Uso:
+//   Valorizzare WebAppName se si vuole filtrare una Web App specifica.
+//   Lasciare WebAppName vuoto per leggere tutte le richieste App Service visibili.
+
+let WebAppName = "";
+AppServiceHTTPLogs
+| where TimeGenerated > ago(2h)
+| where isempty(WebAppName) or _ResourceId has WebAppName
+| project
+    TimeGenerated,
+    CsMethod,
+    CsUriStem,
+    ScStatus,
+    TimeTaken,
+    _ResourceId
+| sort by TimeGenerated desc
+| take 50
