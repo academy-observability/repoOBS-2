@@ -4,13 +4,18 @@ La UD08 introduce Log Analytics Workspace e KQL. Il percorso mantiene i dataset 
 
 ## Sequenza consigliata per i partecipanti
 
-| Passo | File | Uso |
-|---:|---|---|
+| Ordine | File | Quando usarlo | Scopo operativo |
+|---:|---|---|---|
 | 1 | `00_OBS_UD08_Concetti_DETTAGLIATO_v5_3.md` | Concetti, lessico e distinzione tra query simulata e query reale |
 | 2 | `01_OBS_UD08_LAB_guidato_Log_Analytics_KQL_Base_v5_3.md` | Laboratorio guidato KQL base su workspace e `datatable()` |
-| 3 | `03_OBS_UD08_LAB_autonomo_Query_Card_KQL_v5_3.md` | Laboratorio autonomo con Query Card |
-| 4 | `04_OBS_UD08_GUIDA_OPERATIVA_KQL_Passo_Passo_v5_3.md` | Guida operativa per eseguire query e salvare evidenze |
-| 5 | `05_OBS_UD08_LAB_guidato_Tabelle_Azure_Reali_v5_3.md` | Estensione guidata su Activity Log, Storage Blob, App Service e VM opzionale |
+| 3 | `04_OBS_UD08_GUIDA_OPERATIVA_KQL_Passo_Passo_v5_3.md` | Come supporto durante i laboratori | Spiega come eseguire manualmente query da file `.kql`, salvare JSON, leggere errori e produrre evidenze senza script automatici |
+| 4 | `06_OBS_UD08_GUIDA_PORTALE_Collegamenti_Risorse_LAW_v5_4.md` | Prima o insieme al laboratorio 05 | Mostra da Portale Azure come collegare Activity Log, Storage Blob, Web App e VM al LAW |
+| 5 | `05_OBS_UD08_LAB_guidato_Tabelle_Azure_Reali_v5_4_partecipanti.md` | Dopo il percorso KQL base | Esegue la parte tecnica completa: individua le risorse UD05 del partecipante, crea diagnostic settings, genera traffico, interroga tabelle reali |
+| 6 | `03_OBS_UD08_LAB_autonomo_Query_Card_KQL_v5_3.md` | Dopo il guidato, preferibilmente dopo il laboratorio 05 | Produce la Query Card autonoma. A questo punto il partecipante può confrontare query simulate e almeno una tabella reale, se disponibile |
+| 7 | `README.md` | Sempre come indice | Riepiloga file, cartelle operative e output atteso della UD08 |
+
+
+
 
 ## Cartelle operative
 
