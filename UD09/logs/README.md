@@ -1,3 +1,3 @@
 # logs
 
-Salvare qui eventuali file temporanei o log locali generati durante le verifiche da terminale.
+Output testuali locali prodotti durante i comandi di verifica.
