@@ -4,7 +4,8 @@ StorageBlobLogs
 | where TimeGenerated > ago(24h)
 | summarize
     Operazioni=count(),
-    Errori=countif(StatusCode >= 400)
+    Errori=countif(toint(StatusCode) >= 400)
   by OperationName, AccountName
 | extend ErrorRate = iff(Operazioni == 0, 0.0, round(100.0 * Errori / Operazioni, 2))
 | sort by ErrorRate desc, Errori desc
+
