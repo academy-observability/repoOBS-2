@@ -1,0 +1,16 @@
+// UD09 - Scoperta rapida di tabelle note nel LAW.
+// Usa union isfuzzy=true per non fallire se alcune tabelle non esistono.
+union withsource=TableName isfuzzy=true
+    AzureActivity,
+    AzureMetrics,
+    AppServiceHTTPLogs,
+    StorageBlobLogs,
+    Heartbeat,
+    Perf,
+    InsightsMetrics,
+    Event,
+    Syslog,
+    AzureDiagnostics
+| where TimeGenerated > ago(24h)
+| summarize Record=count(), Primo=min(TimeGenerated), Ultimo=max(TimeGenerated) by TableName
+| sort by Record desc

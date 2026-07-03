@@ -1,0 +1,9 @@
+// UD09 - AzureMetrics: trend metriche esportate verso LAW, se presenti.
+AzureMetrics
+| where TimeGenerated > ago(24h)
+| summarize
+    Campioni=count(),
+    Media=round(avg(Average), 2),
+    Massimo=max(Maximum)
+  by Resource, MetricName, Ora=bin(TimeGenerated, 1h)
+| sort by Resource asc, MetricName asc, Ora asc

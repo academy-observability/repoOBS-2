@@ -1,0 +1,11 @@
+// UD09 - AppServiceHTTPLogs: errori HTTP della Web App.
+// Prerequisito: Diagnostic settings della Web App verso LAW e traffico HTTP generato dopo il collegamento.
+AppServiceHTTPLogs
+| where TimeGenerated > ago(24h)
+| summarize
+    Richieste=count(),
+    Errori5xx=countif(ScStatus between (500 .. 599)),
+    Errori4xx=countif(ScStatus between (400 .. 499))
+  by CsHost, CsUriStem
+| extend ErrorRate5xx = iff(Richieste == 0, 0.0, round(100.0 * Errori5xx / Richieste, 2))
+| sort by ErrorRate5xx desc, Errori5xx desc

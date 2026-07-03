@@ -1,0 +1,13 @@
+// UD09 - VM con Azure Monitor Agent/Data Collection Rule: Heartbeat e Perf, se presenti.
+// Prima parte: ultimo heartbeat delle VM.
+Heartbeat
+| where TimeGenerated > ago(24h)
+| summarize UltimoHeartbeat=max(TimeGenerated), Heartbeat=count() by Computer, OSType
+| sort by UltimoHeartbeat desc
+;
+// Seconda parte opzionale da eseguire separatamente se la tabella Perf è presente.
+// Perf
+// | where TimeGenerated > ago(24h)
+// | where CounterName in ("% Processor Time", "Available MBytes")
+// | summarize Media=round(avg(CounterValue), 2), Massimo=max(CounterValue) by Computer, CounterName, bin(TimeGenerated, 1h)
+// | sort by TimeGenerated asc

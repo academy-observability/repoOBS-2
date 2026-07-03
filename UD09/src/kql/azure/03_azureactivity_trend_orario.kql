@@ -1,0 +1,9 @@
+// UD09 - AzureActivity: trend orario delle operazioni.
+AzureActivity
+| where TimeGenerated > ago(24h)
+| summarize
+    Operazioni=count(),
+    OperazioniFallite=countif(ActivityStatusValue in ("Failure", "Failed") or ActivityStatus has "Fail")
+  by Ora=bin(TimeGenerated, 1h)
+| extend FailureRate = iff(Operazioni == 0, 0.0, round(100.0 * OperazioniFallite / Operazioni, 2))
+| sort by Ora asc

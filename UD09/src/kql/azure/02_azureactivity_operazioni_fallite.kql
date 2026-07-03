@@ -1,0 +1,7 @@
+// UD09 - AzureActivity: operazioni amministrative fallite.
+// Prerequisito: Activity Log collegato al LAW come visto in UD08.
+AzureActivity
+| where TimeGenerated > ago(24h)
+| where ActivityStatusValue in ("Failure", "Failed") or ActivityStatus has "Fail"
+| summarize OperazioniFallite=count() by OperationNameValue, ResourceGroup, Caller
+| sort by OperazioniFallite desc
