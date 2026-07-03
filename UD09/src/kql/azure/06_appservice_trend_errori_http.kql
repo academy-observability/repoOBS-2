@@ -1,0 +1,8 @@
+// UD09 - Trend orario degli errori HTTP App Service.
+// Obiettivo: trasformare gli errori in una serie temporale utile per troubleshooting.
+AppServiceHTTPLogs
+| where TimeGenerated > ago(7d)
+| summarize richieste=count(), errori=countif(ScStatus >= 400), errori_5xx=countif(ScStatus >= 500)
+    by bin(TimeGenerated, 1h)
+| extend error_rate = todouble(errori) / todouble(richieste)
+| order by TimeGenerated asc

@@ -1,0 +1,6 @@
+// UD09 - Trend temporale delle attività amministrative.
+// Obiettivo: individuare finestre temporali con maggiore attività o con possibili anomalie.
+AzureActivity
+| where TimeGenerated > ago(7d)
+| summarize operazioni=count() by bin(TimeGenerated, 1h)
+| order by TimeGenerated asc

@@ -1,0 +1,7 @@
+// UD09 - Errori HTTP da App Service, se AppServiceHTTPLogs è presente.
+// Obiettivo: individuare status code >= 400 prodotti dal traffico applicativo.
+AppServiceHTTPLogs
+| where TimeGenerated > ago(7d)
+| where ScStatus >= 400
+| summarize errori=count(), ultimo_evento=max(TimeGenerated) by ScStatus, CsMethod, CsUriStem
+| order by errori desc

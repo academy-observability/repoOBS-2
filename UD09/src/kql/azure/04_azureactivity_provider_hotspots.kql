@@ -1,0 +1,8 @@
+// UD09 - Resource provider più attivi nel periodo.
+// Obiettivo: capire quali famiglie di risorse hanno generato più eventi amministrativi.
+AzureActivity
+| where TimeGenerated > ago(7d)
+| summarize operazioni=count(), errori=countif(ActivityStatusValue !in ("Succeeded", "Started", "Accepted"))
+    by ResourceProviderValue
+| extend error_rate = todouble(errori) / todouble(operazioni)
+| order by operazioni desc

@@ -1,0 +1,19 @@
+// UD09 - Query opzionale su tabella reale AzureActivity.
+//
+// Scopo:
+// - applicare il metodo UD09 a eventi amministrativi reali;
+// - individuare operazioni fallite sul piano di controllo Azure.
+//
+// Prerequisito:
+// La tabella AzureActivity deve essere presente nel Log Analytics Workspace.
+// Se la tabella non esiste o non contiene dati, usare le query basate su datatable.
+
+AzureActivity
+// Analizza solo le ultime 24 ore.
+| where TimeGenerated > ago(24h)
+// Seleziona operazioni con stato di fallimento.
+| where ActivityStatusValue in ("Failure", "Failed")
+// Aggrega per operazione e Resource Group.
+| summarize OperazioniFallite = count() by OperationNameValue, ResourceGroup, Caller
+// Ordina dalle operazioni più frequenti.
+| sort by OperazioniFallite desc

@@ -1,0 +1,8 @@
+// UD09 - Stato sintetico delle VM monitorate con Azure Monitor Agent e DCR.
+// Obiettivo: usare Heartbeat come segnale minimo di presenza del guest nel workspace.
+// La query richiede che Heartbeat sia popolata da AMA/DCR o VM Insights.
+Heartbeat
+| where TimeGenerated > ago(7d)
+| summarize heartbeat=count(), ultimo_heartbeat=max(TimeGenerated) by Computer
+| extend minuti_da_ultimo_heartbeat = datetime_diff("minute", now(), ultimo_heartbeat)
+| order by ultimo_heartbeat desc
