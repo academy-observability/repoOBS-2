@@ -1,9 +1,0 @@
-// UD09 - Operazioni amministrative Azure non riuscite.
-// Obiettivo: individuare errori o stati anomali nel piano di controllo Azure.
-// La query usa AzureActivity, quindi richiede che la tabella sia presente e popolata.
-AzureActivity
-| where TimeGenerated > ago(7d)
-| where ActivityStatusValue !in ("Succeeded", "Started", "Accepted")
-| summarize errori=count(), primo_evento=min(TimeGenerated), ultimo_evento=max(TimeGenerated)
-    by ResourceGroup, ResourceProviderValue, OperationNameValue, ActivityStatusValue
-| order by errori desc
