@@ -1,6 +1,0 @@
-// UD08 - Conteggio delle operazioni amministrative per stato.
-// Obiettivo: applicare summarize a dati reali invece che a un datatable didattico.
-AzureActivity
-| where TimeGenerated > ago(7d)
-| summarize operazioni=count(), ultimo_evento=max(TimeGenerated) by ActivityStatusValue
-| order by operazioni desc
