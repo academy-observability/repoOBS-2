@@ -1,7 +1,0 @@
-// UD10 - Alert candidato: errori recenti Blob Storage.
-// Produce un valore aggregato da confrontare con una soglia.
-
-StorageBlobLogs
-| where TimeGenerated > ago(15m)
-| where StatusCode >= 400
-| summarize errori_storage=count()

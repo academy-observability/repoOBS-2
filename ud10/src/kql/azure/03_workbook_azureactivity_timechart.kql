@@ -1,7 +1,0 @@
-// UD10 - Workbook: andamento operazioni amministrative nel tempo.
-// Visualizzazione consigliata: time chart.
-
-AzureActivity
-| where TimeGenerated > ago(7d)
-| summarize operazioni=count(), errori=countif(ActivityStatusValue !in ("Succeeded", "Started", "Accepted")) by bin(TimeGenerated, 1h)
-| order by TimeGenerated asc

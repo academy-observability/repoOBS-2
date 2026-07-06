@@ -1,7 +1,0 @@
-// UD10 - Alert candidato: errori amministrativi recenti.
-// Produce un valore aggregato da confrontare con una soglia.
-
-AzureActivity
-| where TimeGenerated > ago(30m)
-| where ActivityStatusValue !in ("Succeeded", "Started", "Accepted") or Level == "Error"
-| summarize errori_amministrativi=count()
