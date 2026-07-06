@@ -1,49 +1,40 @@
-# UD10 - Alert, Action Group, Dashboard e Workbook
+# README integrazione UD10 - Completamento e autoverifica
 
-## Scopo della UD
+Questo file integra il README principale della UD10.
 
-La UD10 conclude il primo blocco operativo su Azure Monitor e Log Analytics. Dopo UD08 e UD09 sappiamo creare query KQL e usarle per un'indagine. In questa unità decidiamo quali query possono diventare alert, quali sono più adatte a dashboard/workbook e come documentare un piccolo monitoring pack.
+La UD10 non va rifatta. Dopo il laboratorio guidato principale occorre però completare tre passaggi operativi:
 
 ```text
-UD08 -> Log Analytics Workspace e KQL base
-UD09 -> KQL per troubleshooting e aggregazioni
-UD10 -> alert, action group, dashboard, workbook e monitoring pack
+1. creare o verificare almeno un Log Alert reale su LAW;
+2. costruire o visualizzare almeno una Dashboard o un Workbook nel Portale Azure;
+3. completare l'autoverifica finale prima del lab autonomo o della consegna.
 ```
 
-## Sequenza consigliata
+## Sequenza corretta aggiornata
 
-| Passo | File | Uso |
+| Passo | File | Scopo |
 |---:|---|---|
-| 1 | `00_OBS_UD10_Concetti_Alert_Dashboard_Workbook_v5_2.md` | Concetti: alert, soglie, severità, action group, dashboard, workbook |
-| 2 | `01_OBS_UD10_LAB_guidato_Alert_Action_Group_Dashboard_Workbook_v5_2.md` | Laboratorio guidato con query simulate e progettazione alert |
-| 3 | `04_OBS_UD10_GUIDA_OPERATIVA_Alert_Workbook_Passo_Passo_v5_2.md` | Guida rapida per eseguire i passaggi senza perdersi nel portale |
-| 4 | `05_OBS_UD10_LAB_guidato_Workbook_Alert_Tabelle_Azure_Reali_v5_2.md` | Estensione su dati reali del Log Analytics Workspace, se disponibili |
-| 5 | `03_OBS_UD10_LAB_autonomo_Monitoring_Pack_Azure_v5_2.md` | Attività autonoma: costruzione del monitoring pack |
+| 1 | `00_OBS_UD10_Concetti_Alert_Dashboard_Workbook_v5_2.md` | Capire alert, soglie, severità, Action Group, Dashboard e Workbook |
+| 2 | `04_OBS_UD10_GUIDA_OPERATIVA_Alert_Workbook_Passo_Passo_v5_2.md` | Tenere aperta la guida operativa durante il lavoro sul Portale |
+| 3 | `01_OBS_UD10_LAB_guidato_Alert_Action_Group_Dashboard_Workbook_v5_2.md` | Eseguire il guidato principale e compilare le prime decisioni |
+| 4 | `05_OBS_UD10_LAB_guidato_Workbook_Alert_Tabelle_Azure_Reali_v5_2.md` | Verificare tabelle reali nel LAW e scegliere query utilizzabili |
+| 5 | `06_OBS_UD10_LAB_guidato_Creazione_Reale_Log_Alert_su_LAW_v5_2.md` | Creare realmente una Log Alert Rule su LAW, se le tabelle sono disponibili |
+| 6 | `07_OBS_UD10_COMPLETAMENTO_Dashboard_Workbook_Reali_Portale_v5_2.md` | Visualizzare query in Dashboard o Workbook nel Portale Azure |
+| 7 | `08_OBS_UD10_AUTOVERIFICA_Partecipante_Alert_Dashboard_Workbook_v5_2.md` | Controllare se la UD10 è davvero completata |
+| 8 | `03_OBS_UD10_LAB_autonomo_Monitoring_Pack_Azure_v5_2.md` | Produrre il Monitoring Pack autonomo |
 
-## Cartelle operative
+## Output minimo prima di chiudere UD10
 
-| Cartella | Contenuto |
-|---|---|
-| `src/kql/alert/` | query candidate per alert su dataset didattici |
-| `src/kql/workbook/` | query per dashboard e workbook su dataset didattici |
-| `src/kql/azure/` | query adattabili alle tabelle reali del workspace |
-| `docs/` | template da compilare |
-| `evidence/` | screenshot, esportazioni e output di verifica |
-| `logs/` | eventuali output testuali |
-| `config/` | variabili e note operative |
-| `img/` | immagini da includere nei report |
+La UD10 può considerarsi completata quando sono presenti almeno:
 
-## Output atteso
-
-Alla fine della UD10 devono essere presenti almeno:
-
-- una query candidata per alert con soglia motivata;
-- un Alert Decision Record compilato;
-- una bozza di dashboard o workbook;
-- un monitoring pack minimo in `docs/`;
+- una query KQL candidata per alert;
+- una soglia motivata;
+- una Log Alert Rule reale oppure una configurazione documentata e motivata;
+- un Action Group creato o descritto con precisione;
+- una Dashboard o un Workbook visualizzato nel Portale;
 - evidenze salvate in `evidence/`;
-- nota sui limiti dei dati reali disponibili nel workspace.
+- autoverifica compilata.
 
-## Regola pratica
+## Nota importante
 
-Una query che restituisce righe non è automaticamente un buon alert. Una query diventa candidata per alert solo quando produce una condizione azionabile, con soglia, finestra temporale, severità e azione successiva chiare.
+Il file `UD10_DEMO_ALERT_GRUPPI_RUOLI_v5_2` è una demo facoltativa per attività di gruppo. Non fa parte della sequenza minima obbligatoria della UD10.
