@@ -1,0 +1,22 @@
+// UD10 - Query candidata per alert: operazioni fallite per risorsa.
+// Scopo: trasformare eventi grezzi in una condizione sintetica azionabile.
+
+let BaseTime = now() - 30m;
+let Operations = datatable(OffsetMin:int, Resource:string, Operation:string, Result:string, DurationMs:int)
+[
+    0,  "webapp-01", "GET /api/orders",     "Success", 120,
+    3,  "webapp-01", "GET /api/orders",     "Failure", 980,
+    6,  "webapp-01", "POST /api/orders",    "Failure", 1250,
+    9,  "webapp-01", "GET /api/customers",  "Success", 160,
+    12, "webapp-01", "POST /api/orders",    "Failure", 1430,
+    15, "webapp-02", "GET /health",         "Success", 40,
+    18, "webapp-01", "POST /api/orders",    "Failure", 1360,
+    21, "webapp-02", "GET /api/items",      "Success", 180
+];
+Operations
+| extend TimeGenerated = BaseTime + OffsetMin * 1m
+| summarize FailedOps=countif(Result == "Failure"), TotalOps=count() by Resource
+| extend FailureRate = round(todouble(FailedOps) / todouble(TotalOps) * 100, 2)
+// Soglia didattica: almeno 3 fallimenti nella stessa risorsa.
+| where FailedOps >= 3
+| order by FailedOps desc

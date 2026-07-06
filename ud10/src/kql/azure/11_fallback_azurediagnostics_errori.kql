@@ -1,0 +1,8 @@
+// UD10 - Fallback AzureDiagnostics: eventi/errori recenti.
+// Nota: AzureDiagnostics ha schema variabile in base al servizio.
+
+AzureDiagnostics
+| where TimeGenerated > ago(24h)
+| where Level == "Error" or ResultType has_any ("Error", "Failure", "Failed") or Category has "Error"
+| summarize eventi=count(), ultimo_evento=max(TimeGenerated) by ResourceProvider, Resource, Category
+| order by eventi desc

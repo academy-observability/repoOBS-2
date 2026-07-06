@@ -1,0 +1,26 @@
+// UD10 - Analisi rumore alert: confronto soglie.
+// Scopo: mostrare che cambiare soglia cambia affidabilità e rumore operativo.
+
+let BaseTime = now() - 15m;
+let AppRequests = datatable(OffsetMin:int, Success:bool)
+[
+    0, true,
+    1, true,
+    2, false,
+    3, true,
+    4, false,
+    5, true,
+    6, false,
+    7, true,
+    8, true,
+    9, false
+];
+let Summary = AppRequests
+| extend TimeGenerated = BaseTime + OffsetMin * 1m
+| summarize Total=count(), Errors=countif(Success == false)
+| extend ErrorRate = round(todouble(Errors) / todouble(Total) * 100, 2);
+Summary
+| extend AlertAt5 = ErrorRate >= 5,
+         AlertAt10 = ErrorRate >= 10,
+         AlertAt20 = ErrorRate >= 20,
+         AlertAt50 = ErrorRate >= 50

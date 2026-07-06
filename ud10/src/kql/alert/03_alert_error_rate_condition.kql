@@ -1,0 +1,23 @@
+// UD10 - Query candidata per alert: error rate applicativo.
+// Scopo: usare volume minimo + percentuale di errore per ridurre alert rumorosi.
+
+let BaseTime = now() - 15m;
+let AppRequests = datatable(OffsetMin:int, OperationName:string, Success:bool, DurationMs:int)
+[
+    0, "GET /",              true,  80,
+    1, "GET /api/orders",    true,  140,
+    2, "POST /api/orders",   false, 1200,
+    3, "POST /api/orders",   false, 1350,
+    4, "GET /api/orders",    true,  160,
+    5, "GET /api/customers", true,  110,
+    6, "POST /api/orders",   false, 1500,
+    7, "GET /api/items",     true,  100,
+    8, "GET /api/items",     true,  105,
+    9, "POST /api/orders",   false, 1420
+];
+AppRequests
+| extend TimeGenerated = BaseTime + OffsetMin * 1m
+| summarize Total=count(), Errors=countif(Success == false)
+| extend ErrorRate = round(todouble(Errors) / todouble(Total) * 100, 2)
+// Condizione candidata: almeno 5 richieste e error rate >= 10%.
+| where Total >= 5 and ErrorRate >= 10

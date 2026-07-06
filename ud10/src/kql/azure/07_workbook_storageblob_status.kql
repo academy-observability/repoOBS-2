@@ -1,0 +1,7 @@
+// UD10 - Workbook: operazioni Blob Storage per stato.
+// Prerequisito: StorageBlobLogs presente e popolata.
+
+StorageBlobLogs
+| where TimeGenerated > ago(24h)
+| summarize operazioni=count(), errori=countif(StatusCode >= 400) by bin(TimeGenerated, 1h), OperationName
+| order by TimeGenerated asc

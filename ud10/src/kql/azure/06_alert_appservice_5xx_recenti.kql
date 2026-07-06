@@ -1,0 +1,7 @@
+// UD10 - Alert candidato: errori HTTP 5xx recenti su App Service.
+// Adattare la soglia al traffico reale.
+
+AppServiceHTTPLogs
+| where TimeGenerated > ago(15m)
+| where ScStatus >= 500
+| summarize errori_5xx=count()

@@ -1,0 +1,7 @@
+// UD10 - Workbook: attività amministrative per stato.
+// Prerequisito: AzureActivity presente e popolata.
+
+AzureActivity
+| where TimeGenerated > ago(7d)
+| summarize operazioni=count() by ActivityStatusValue
+| order by operazioni desc

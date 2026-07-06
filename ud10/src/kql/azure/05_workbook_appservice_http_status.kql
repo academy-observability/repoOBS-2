@@ -1,0 +1,7 @@
+// UD10 - Workbook: stato HTTP App Service.
+// Prerequisito: AppServiceHTTPLogs presente e popolata.
+
+AppServiceHTTPLogs
+| where TimeGenerated > ago(24h)
+| summarize richieste=count(), errori_4xx=countif(ScStatus between (400 .. 499)), errori_5xx=countif(ScStatus >= 500) by bin(TimeGenerated, 1h)
+| order by TimeGenerated asc

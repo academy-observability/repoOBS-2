@@ -1,0 +1,22 @@
+// UD10 - Workbook/dashboard: trend errori nel tempo.
+// Visualizzazione consigliata: time chart.
+
+let BaseTime = now() - 60m;
+let AppRequests = datatable(OffsetMin:int, OperationName:string, Success:bool, DurationMs:int)
+[
+    0,  "GET /",              true,  80,
+    5,  "GET /api/orders",    true,  140,
+    10, "POST /api/orders",   false, 1200,
+    15, "POST /api/orders",   false, 1350,
+    20, "GET /api/orders",    true,  160,
+    25, "GET /api/customers", true,  110,
+    30, "POST /api/orders",   false, 1500,
+    35, "GET /api/items",     true,  100,
+    40, "GET /api/items",     true,  105,
+    45, "POST /api/orders",   false, 1420
+];
+AppRequests
+| extend TimeGenerated = BaseTime + OffsetMin * 1m
+| summarize Requests=count(), Errors=countif(Success == false) by bin(TimeGenerated, 15m)
+| extend ErrorRate = round(todouble(Errors) / todouble(Requests) * 100, 2)
+| order by TimeGenerated asc
