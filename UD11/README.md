@@ -37,7 +37,7 @@ Segui i file in questo ordine.
 | 3 | `04_OBS_UD11_GUIDA_OPERATIVA_AzureDevOps_Passo_Passo_v5_5.md` | Supporto durante il laboratorio guidato | Riferimento rapido per ritrovare schermate, sezioni e controlli principali |
 | 4 | `02_OBS_UD11_MINI_ATTIVITA_Mappa_Flusso_DevOps_Cloud_v5_5.md` | Dopo il laboratorio guidato | File `docs/evidence_ud11_mappa_flusso.md` compilato |
 | 5 | `03_OBS_UD11_LAB_autonomo_Verifica_Prerequisiti_AzureDevOps_v5_5.md` | Attività autonoma pomeridiana | File di evidenza autonomo compilato e prerequisiti verificati |
-| 6 | `05_OBS_UD11_GUIDA_PROSSIME_UD_Docker_ACR_ACI_ACA_v5_5.md` | Lettura finale di raccordo | Comprendere dove si collocheranno, in modo generale, Docker locale, registry, deploy cloud e observability |
+
 
 Nota importante: la sequenza sopra è la sequenza di lavoro **della UD11**.  
 Non è una pianificazione rigida delle UD successive.
