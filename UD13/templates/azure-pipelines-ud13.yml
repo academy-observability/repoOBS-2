@@ -1,0 +1,98 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - work/UD13/*
+      - work/UD13/**
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureServiceConnection: 'sc-obs-azure-rg'
+  resourceGroupName: 'NOME_RESOURCE_GROUP'
+  acrName: 'NOME_ACR_UNIVOCO'
+  imageName: 'obsapp-ud13'
+  aciName: 'aci-obsapp-ud13'
+  aciDnsName: 'obsapp-ud13-nomeunivoco'
+  location: 'westeurope'
+  containerPort: '8000'
+  appVersion: '1.0'
+
+stages:
+- stage: BuildPushDeploy
+  displayName: Build, push and deploy to ACI
+  jobs:
+  - job: BuildPushDeployJob
+    displayName: Build image, push to ACR, deploy to ACI
+    steps:
+    - checkout: self
+
+    - task: AzureCLI@2
+      displayName: Build image, push to ACR and deploy to ACI
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -e
+
+          echo "Verifica subscription usata dalla service connection"
+          az account show
+
+          echo "Verifica file richiesti"
+          test -f work/UD13/src/app.py
+          test -f work/UD13/requirements.txt
+          test -f work/UD13/Dockerfile
+
+          echo "Login ad ACR"
+          az acr login --name $(acrName)
+
+          IMAGE_TAG=$(Build.BuildId)
+          FULL_IMAGE_NAME="$(acrName).azurecr.io/$(imageName):${IMAGE_TAG}"
+
+          echo "Build immagine ${FULL_IMAGE_NAME}"
+          docker build -t ${FULL_IMAGE_NAME} work/UD13
+
+          echo "Push immagine ${FULL_IMAGE_NAME}"
+          docker push ${FULL_IMAGE_NAME}
+
+          echo "Recupero credenziali ACR per deploy didattico su ACI"
+          ACR_USER=$(az acr credential show --name $(acrName) --query username -o tsv)
+          ACR_PASS=$(az acr credential show --name $(acrName) --query "passwords[0].value" -o tsv)
+
+          echo "Elimino eventuale container ACI precedente"
+          az container delete \
+            --resource-group $(resourceGroupName) \
+            --name $(aciName) \
+            --yes || true
+
+          echo "Creo nuovo container ACI"
+          az container create \
+            --resource-group $(resourceGroupName) \
+            --name $(aciName) \
+            --image ${FULL_IMAGE_NAME} \
+            --cpu 1 \
+            --memory 1.5 \
+            --ports $(containerPort) \
+            --ip-address Public \
+            --dns-name-label $(aciDnsName) \
+            --location $(location) \
+            --registry-login-server $(acrName).azurecr.io \
+            --registry-username ${ACR_USER} \
+            --registry-password ${ACR_PASS} \
+            --environment-variables PORT=$(containerPort) APP_ENV=aci APP_VERSION=$(appVersion)
+
+          echo "Recupero FQDN"
+          FQDN=$(az container show \
+            --resource-group $(resourceGroupName) \
+            --name $(aciName) \
+            --query ipAddress.fqdn \
+            -o tsv)
+
+          echo "Applicazione disponibile su: http://${FQDN}:$(containerPort)"
+          echo "Image deployata: ${FULL_IMAGE_NAME}"
