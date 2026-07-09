@@ -1,0 +1,195 @@
+trigger:
+  - main
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureServiceConnection: 'sc-obs-azure-rg'
+  resourceGroupName: 'INSERIRE_NOME_RESOURCE_GROUP'
+  acrName: 'INSERIRE_NOME_ACR'
+  imageName: 'obsapp-ud14'
+  imageTag: '$(Build.BuildId)'
+  aciName: 'aci-obsapp-ud14'
+  aciDnsName: 'obsapp-ud14-NOMEUNIVOCO'
+  location: 'westeurope'
+  containerPort: '8000'
+  workDir: 'work/UD14'
+
+stages:
+- stage: ValidateRepository
+  displayName: Validate repository structure
+  jobs:
+  - job: ValidateFiles
+    displayName: Check required files and Python syntax
+    steps:
+    - checkout: self
+    - bash: |
+        set -e
+        cd "$(Build.SourcesDirectory)/$(workDir)"
+
+        echo "Verifica file minimi"
+        test -f src/app.py
+        test -f requirements.txt
+        test -f Dockerfile
+        test -f .dockerignore
+
+        echo "Verifica sintassi Python"
+        python3 -m py_compile src/app.py
+
+        echo "Struttura validata"
+      displayName: Validate files and Python syntax
+
+- stage: BuildAndPush
+  displayName: Build and push image to ACR
+  dependsOn: ValidateRepository
+  condition: succeeded()
+  jobs:
+  - job: BuildPush
+    displayName: Build image and push to ACR
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: Build and push Docker image
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -e
+          cd "$(Build.SourcesDirectory)/$(workDir)"
+
+          echo "Subscription attiva"
+          az account show
+
+          echo "Login ad ACR"
+          az acr login --name $(acrName)
+
+          FULL_IMAGE_NAME="$(acrName).azurecr.io/$(imageName):$(imageTag)"
+
+          echo "Build immagine: ${FULL_IMAGE_NAME}"
+          docker build -t ${FULL_IMAGE_NAME} .
+
+          echo "Push immagine: ${FULL_IMAGE_NAME}"
+          docker push ${FULL_IMAGE_NAME}
+
+          echo "Tag disponibili in ACR per $(imageName)"
+          az acr repository show-tags \
+            --name $(acrName) \
+            --repository $(imageName) \
+            -o table
+
+- stage: DeployToACI
+  displayName: Deploy image to Azure Container Instances
+  dependsOn: BuildAndPush
+  condition: succeeded()
+  jobs:
+  - job: DeployACI
+    displayName: Create or replace ACI container
+    steps:
+    - task: AzureCLI@2
+      displayName: Deploy to ACI
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -e
+
+          FULL_IMAGE_NAME="$(acrName).azurecr.io/$(imageName):$(imageTag)"
+
+          echo "Recupero credenziali ACR"
+          ACR_USER=$(az acr credential show --name $(acrName) --query username -o tsv)
+          ACR_PASS=$(az acr credential show --name $(acrName) --query "passwords[0].value" -o tsv)
+
+          echo "Elimino eventuale container precedente"
+          az container delete \
+            --resource-group $(resourceGroupName) \
+            --name $(aciName) \
+            --yes || true
+
+          echo "Creo nuovo container ACI"
+          az container create \
+            --resource-group $(resourceGroupName) \
+            --name $(aciName) \
+            --image ${FULL_IMAGE_NAME} \
+            --cpu 1 \
+            --memory 1.5 \
+            --ports $(containerPort) \
+            --ip-address Public \
+            --dns-name-label $(aciDnsName) \
+            --location $(location) \
+            --registry-login-server $(acrName).azurecr.io \
+            --registry-username ${ACR_USER} \
+            --registry-password ${ACR_PASS} \
+            --environment-variables \
+              PORT=$(containerPort) \
+              APP_ENV=aci \
+              APP_VERSION=$(imageTag) \
+              BUILD_ID=$(Build.BuildId)
+
+          echo "FQDN finale"
+          az container show \
+            --resource-group $(resourceGroupName) \
+            --name $(aciName) \
+            --query ipAddress.fqdn \
+            -o tsv
+
+- stage: SmokeTest
+  displayName: Verify deployed application
+  dependsOn: DeployToACI
+  condition: succeeded()
+  jobs:
+  - job: VerifyACI
+    displayName: Run smoke tests against ACI
+    steps:
+    - task: AzureCLI@2
+      displayName: Smoke test HTTP endpoints
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -e
+
+          FQDN=$(az container show \
+            --resource-group $(resourceGroupName) \
+            --name $(aciName) \
+            --query ipAddress.fqdn \
+            -o tsv)
+
+          if [ -z "$FQDN" ]; then
+            echo "FQDN non disponibile"
+            exit 1
+          fi
+
+          APP_URL="http://${FQDN}:$(containerPort)"
+
+          echo "Warm-up applicazione"
+          sleep 20
+
+          echo "Test /health"
+          curl --fail --silent --show-error "${APP_URL}/health"
+          echo
+
+          echo "Test /"
+          curl --fail --silent --show-error "${APP_URL}/"
+          echo
+
+          echo "Test /time"
+          curl --fail --silent --show-error "${APP_URL}/time"
+          echo
+
+          echo "Test POST /echo"
+          curl --fail --silent --show-error \
+            -X POST "${APP_URL}/echo" \
+            -H 'Content-Type: application/json' \
+            -d '{"lab":"UD14","check":"smoke-test"}'
+          echo
+
+          echo "Log recenti container"
+          az container logs \
+            --resource-group $(resourceGroupName) \
+            --name $(aciName)
