@@ -1,0 +1,86 @@
+trigger:
+  - main
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureServiceConnection: 'sc-obs-azure-rg'
+  acrName: 'NOME_ACR'
+  imageTag: '$(Build.BuildId)'
+  backendImageName: 'backend'
+  frontendImageName: 'frontend'
+
+stages:
+- stage: ValidateRepository
+  displayName: Validate FE/BE monorepo structure
+  jobs:
+  - job: ValidateFiles
+    displayName: Check required files and Python syntax
+    steps:
+    - checkout: self
+    - bash: |
+        set -e
+        echo "Verifica struttura repository UD15"
+        test -f backend/app.py
+        test -f backend/requirements.txt
+        test -f backend/Dockerfile
+        test -f frontend/app.py
+        test -f frontend/requirements.txt
+        test -f frontend/Dockerfile
+        python3 -m py_compile backend/app.py
+        python3 -m py_compile frontend/app.py
+        echo "Struttura e sintassi valide"
+      workingDirectory: 'work/UD15'
+      displayName: Validate files and syntax
+
+- stage: PublishImages
+  displayName: Build and push FE/BE images to ACR
+  dependsOn: ValidateRepository
+  condition: succeeded()
+  jobs:
+  - job: BuildBackend
+    displayName: Build and push backend image
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: Build and push backend image
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -e
+          az account show
+          az acr login --name $(acrName)
+          BACKEND_IMAGE="$(acrName).azurecr.io/$(backendImageName):$(imageTag)"
+          echo "Build backend image: ${BACKEND_IMAGE}"
+          docker build -t ${BACKEND_IMAGE} ./backend
+          echo "Push backend image: ${BACKEND_IMAGE}"
+          docker push ${BACKEND_IMAGE}
+          az acr repository show-tags --name $(acrName) --repository $(backendImageName) -o table
+        workingDirectory: '$(System.DefaultWorkingDirectory)/work/UD15'
+
+  - job: BuildFrontend
+    displayName: Build and push frontend image
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: Build and push frontend image
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -e
+          az account show
+          az acr login --name $(acrName)
+          FRONTEND_IMAGE="$(acrName).azurecr.io/$(frontendImageName):$(imageTag)"
+          echo "Build frontend image: ${FRONTEND_IMAGE}"
+          docker build -t ${FRONTEND_IMAGE} ./frontend
+          echo "Push frontend image: ${FRONTEND_IMAGE}"
+          docker push ${FRONTEND_IMAGE}
+          az acr repository show-tags --name $(acrName) --repository $(frontendImageName) -o table
+        workingDirectory: '$(System.DefaultWorkingDirectory)/work/UD15'
