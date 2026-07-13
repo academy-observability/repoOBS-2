@@ -1,0 +1,251 @@
+# UD16 - Deploy FE/BE su Azure Container Apps
+# Questo template parte dalle immagini già pubblicate in ACR durante UD15.
+# Copiare questo file in: work/UD16/azure-pipelines.yml
+# Aggiornare le variabili: azureServiceConnection, resourceGroupName, acrName, location, imageTag.
+
+trigger: none
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureServiceConnection: 'sc-obs-azure-rg'
+  resourceGroupName: 'NOME_RESOURCE_GROUP'
+  location: 'westeurope'
+  acrName: 'NOME_ACR'
+
+  # Usare il tag generato dalla pipeline UD15. Per un primo test è possibile usare latest
+  # solo se in UD15 è stato pubblicato anche il tag latest.
+  imageTag: 'INSERIRE_BUILD_ID_UD15'
+
+  backendImageName: 'backend'
+  frontendImageName: 'frontend'
+
+  acaEnvironmentName: 'acaenv-obs-ud16'
+  backendContainerAppName: 'ca-obs-ud16-backend'
+  frontendContainerAppName: 'ca-obs-ud16-frontend'
+
+  backendPort: '8000'
+  frontendPort: '8000'
+
+stages:
+- stage: ValidateInputs
+  displayName: Validate Azure inputs and ACR images
+  jobs:
+  - job: Validate
+    displayName: Validate resource group, ACR and image tags
+    steps:
+    - task: AzureCLI@2
+      displayName: Validate prerequisites
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -euo pipefail
+
+          echo "Resource group: $(resourceGroupName)"
+          echo "ACR: $(acrName)"
+          echo "Image tag: $(imageTag)"
+
+          az account show --output table
+          az group show --name "$(resourceGroupName)" --output table
+          az acr show --name "$(acrName)" --resource-group "$(resourceGroupName)" --output table
+
+          echo "Backend tags disponibili:"
+          az acr repository show-tags --name "$(acrName)" --repository "$(backendImageName)" --output table
+
+          echo "Frontend tags disponibili:"
+          az acr repository show-tags --name "$(acrName)" --repository "$(frontendImageName)" --output table
+
+- stage: DeployEnvironment
+  displayName: Create or verify ACA environment
+  dependsOn: ValidateInputs
+  condition: succeeded()
+  jobs:
+  - job: Environment
+    displayName: Create or verify Container Apps environment
+    steps:
+    - task: AzureCLI@2
+      displayName: Create ACA environment if missing
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -euo pipefail
+
+          az extension add --name containerapp --upgrade || true
+
+          if az containerapp env show \
+            --name "$(acaEnvironmentName)" \
+            --resource-group "$(resourceGroupName)" >/dev/null 2>&1; then
+            echo "ACA environment già esistente: $(acaEnvironmentName)"
+          else
+            echo "Creo ACA environment: $(acaEnvironmentName)"
+            az containerapp env create \
+              --name "$(acaEnvironmentName)" \
+              --resource-group "$(resourceGroupName)" \
+              --location "$(location)"
+          fi
+
+          az containerapp env show \
+            --name "$(acaEnvironmentName)" \
+            --resource-group "$(resourceGroupName)" \
+            --query "{name:name,location:location,provisioningState:properties.provisioningState}" \
+            --output table
+
+- stage: DeployBackend
+  displayName: Deploy backend Container App
+  dependsOn: DeployEnvironment
+  condition: succeeded()
+  jobs:
+  - job: Backend
+    displayName: Create or update backend
+    steps:
+    - task: AzureCLI@2
+      displayName: Deploy backend image
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -euo pipefail
+
+          ACR_LOGIN_SERVER="$(acrName).azurecr.io"
+          BACKEND_IMAGE="${ACR_LOGIN_SERVER}/$(backendImageName):$(imageTag)"
+          ACR_USER=$(az acr credential show --name "$(acrName)" --query username -o tsv)
+          ACR_PASS=$(az acr credential show --name "$(acrName)" --query 'passwords[0].value' -o tsv)
+
+          echo "Deploy backend image: ${BACKEND_IMAGE}"
+
+          if az containerapp show \
+            --name "$(backendContainerAppName)" \
+            --resource-group "$(resourceGroupName)" >/dev/null 2>&1; then
+            echo "Aggiorno backend esistente"
+            az containerapp update \
+              --name "$(backendContainerAppName)" \
+              --resource-group "$(resourceGroupName)" \
+              --image "${BACKEND_IMAGE}" \
+              --set-env-vars APP_ENV=aca APP_ROLE=backend APP_VERSION="$(imageTag)" PORT="$(backendPort)"
+          else
+            echo "Creo backend Container App"
+            az containerapp create \
+              --name "$(backendContainerAppName)" \
+              --resource-group "$(resourceGroupName)" \
+              --environment "$(acaEnvironmentName)" \
+              --image "${BACKEND_IMAGE}" \
+              --target-port "$(backendPort)" \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --registry-server "${ACR_LOGIN_SERVER}" \
+              --registry-username "${ACR_USER}" \
+              --registry-password "${ACR_PASS}" \
+              --env-vars APP_ENV=aca APP_ROLE=backend APP_VERSION="$(imageTag)" PORT="$(backendPort)"
+          fi
+
+          BACKEND_FQDN=$(az containerapp show \
+            --name "$(backendContainerAppName)" \
+            --resource-group "$(resourceGroupName)" \
+            --query properties.configuration.ingress.fqdn \
+            -o tsv)
+
+          echo "Backend FQDN: https://${BACKEND_FQDN}"
+          echo "##vso[task.setvariable variable=backendUrl;isOutput=true]https://${BACKEND_FQDN}"
+      name: deployBackendStep
+
+- stage: DeployFrontend
+  displayName: Deploy frontend Container App
+  dependsOn: DeployBackend
+  condition: succeeded()
+  variables:
+    backendUrlFromStage: $[ stageDependencies.DeployBackend.Backend.outputs['deployBackendStep.backendUrl'] ]
+  jobs:
+  - job: Frontend
+    displayName: Create or update frontend
+    steps:
+    - task: AzureCLI@2
+      displayName: Deploy frontend image
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -euo pipefail
+
+          ACR_LOGIN_SERVER="$(acrName).azurecr.io"
+          FRONTEND_IMAGE="${ACR_LOGIN_SERVER}/$(frontendImageName):$(imageTag)"
+          ACR_USER=$(az acr credential show --name "$(acrName)" --query username -o tsv)
+          ACR_PASS=$(az acr credential show --name "$(acrName)" --query 'passwords[0].value' -o tsv)
+          BACKEND_URL="$(backendUrlFromStage)"
+
+          echo "Deploy frontend image: ${FRONTEND_IMAGE}"
+          echo "BACKEND_URL usato dal frontend: ${BACKEND_URL}"
+
+          if az containerapp show \
+            --name "$(frontendContainerAppName)" \
+            --resource-group "$(resourceGroupName)" >/dev/null 2>&1; then
+            echo "Aggiorno frontend esistente"
+            az containerapp update \
+              --name "$(frontendContainerAppName)" \
+              --resource-group "$(resourceGroupName)" \
+              --image "${FRONTEND_IMAGE}" \
+              --set-env-vars APP_ENV=aca APP_ROLE=frontend APP_VERSION="$(imageTag)" PORT="$(frontendPort)" BACKEND_URL="${BACKEND_URL}"
+          else
+            echo "Creo frontend Container App"
+            az containerapp create \
+              --name "$(frontendContainerAppName)" \
+              --resource-group "$(resourceGroupName)" \
+              --environment "$(acaEnvironmentName)" \
+              --image "${FRONTEND_IMAGE}" \
+              --target-port "$(frontendPort)" \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --registry-server "${ACR_LOGIN_SERVER}" \
+              --registry-username "${ACR_USER}" \
+              --registry-password "${ACR_PASS}" \
+              --env-vars APP_ENV=aca APP_ROLE=frontend APP_VERSION="$(imageTag)" PORT="$(frontendPort)" BACKEND_URL="${BACKEND_URL}"
+          fi
+
+          FRONTEND_FQDN=$(az containerapp show \
+            --name "$(frontendContainerAppName)" \
+            --resource-group "$(resourceGroupName)" \
+            --query properties.configuration.ingress.fqdn \
+            -o tsv)
+
+          echo "Frontend FQDN: https://${FRONTEND_FQDN}"
+          echo "##vso[task.setvariable variable=frontendUrl;isOutput=true]https://${FRONTEND_FQDN}"
+      name: deployFrontendStep
+
+- stage: VerifyDeploy
+  displayName: Verify frontend/backend deployment
+  dependsOn: DeployFrontend
+  condition: succeeded()
+  variables:
+    frontendUrlFromStage: $[ stageDependencies.DeployFrontend.Frontend.outputs['deployFrontendStep.frontendUrl'] ]
+  jobs:
+  - job: Verify
+    displayName: Smoke test public endpoints
+    steps:
+    - bash: |
+        set -euo pipefail
+        FRONTEND_URL="$(frontendUrlFromStage)"
+
+        echo "Attendo inizializzazione revisioni ACA"
+        sleep 30
+
+        echo "Test frontend health"
+        curl --fail --silent --show-error "${FRONTEND_URL}/health"
+        echo
+
+        echo "Test frontend ready: deve verificare anche backend"
+        curl --fail --silent --show-error "${FRONTEND_URL}/ready"
+        echo
+
+        echo "Test home/demo frontend"
+        curl --fail --silent --show-error "${FRONTEND_URL}/"
+        echo
+      displayName: Smoke test frontend and FE to BE integration
