@@ -1,0 +1,84 @@
+// OBS UD17 v5.7_1 - Query KQL per osservabilità cloud Catalogo prodotti
+// Eseguire in Application Insights Logs o nel Log Analytics Workspace collegato.
+// Dopo la generazione traffico, attendere alcuni minuti per l'ingestion.
+
+// 1. Ultime request applicative
+AppRequests
+| where TimeGenerated > ago(2h)
+| project TimeGenerated, AppRoleName, Name, Url, ResultCode, Success, DurationMs, OperationId
+| order by TimeGenerated desc
+
+// 2. Request relative al Catalogo prodotti
+AppRequests
+| where TimeGenerated > ago(2h)
+| where Url has "/products" or Name has "/products"
+| summarize Requests=count(), AvgDurationMs=avg(DurationMs), P95DurationMs=percentile(DurationMs, 95) by AppRoleName, Name, ResultCode, Success
+| order by Requests desc
+
+// 3. Endpoint lento: /products/slow
+AppRequests
+| where TimeGenerated > ago(2h)
+| where Url has "/products/slow" or Name has "/products/slow"
+| project TimeGenerated, AppRoleName, Name, Url, ResultCode, Success, DurationMs, OperationId
+| order by DurationMs desc
+
+// 4. Errori controllati: /products/error
+AppRequests
+| where TimeGenerated > ago(2h)
+| where Url has "/products/error" or Name has "/products/error" or toint(ResultCode) >= 500
+| project TimeGenerated, AppRoleName, Name, Url, ResultCode, Success, DurationMs, OperationId
+| order by TimeGenerated desc
+
+// 5. Dependency frontend -> backend
+AppDependencies
+| where TimeGenerated > ago(2h)
+| where Name has "/api/products" or Data has "/api/products" or Target has "backend"
+| project TimeGenerated, AppRoleName, Target, Name, Data, ResultCode, Success, DurationMs, OperationId
+| order by TimeGenerated desc
+
+// 6. Dependency lente
+AppDependencies
+| where TimeGenerated > ago(2h)
+| where Name has "/api/products/slow" or Data has "/api/products/slow"
+| project TimeGenerated, AppRoleName, Target, Name, Data, ResultCode, Success, DurationMs, OperationId
+| order by DurationMs desc
+
+// 7. Console log JSON da Azure Container Apps
+ContainerAppConsoleLogs_CL
+| where TimeGenerated > ago(2h)
+| where Log_s has "request_id" and (Log_s has "products-frontend" or Log_s has "products-backend")
+| extend j=parse_json(Log_s)
+| project TimeGenerated, ContainerAppName_s, RevisionName_s, service=tostring(j.service), path=tostring(j.path), status=toint(j.status), latency_ms=todouble(j.latency_ms), request_id=tostring(j.request_id), trace_id=tostring(j.trace_id), span_id=tostring(j.span_id), message=tostring(j.message)
+| order by TimeGenerated desc
+
+// 8. Ricerca per request_id: sostituire il valore
+let rid = "INCOLLA_REQUEST_ID";
+ContainerAppConsoleLogs_CL
+| where TimeGenerated > ago(2h)
+| where Log_s has rid
+| extend j=parse_json(Log_s)
+| project TimeGenerated, ContainerAppName_s, RevisionName_s, service=tostring(j.service), path=tostring(j.path), status=toint(j.status), latency_ms=todouble(j.latency_ms), request_id=tostring(j.request_id), trace_id=tostring(j.trace_id), message=tostring(j.message)
+| order by TimeGenerated asc
+
+// 9. Confronto frontend/backend per path e latenza
+ContainerAppConsoleLogs_CL
+| where TimeGenerated > ago(2h)
+| where Log_s has "request_id"
+| extend j=parse_json(Log_s)
+| extend service=tostring(j.service), path=tostring(j.path), status=toint(j.status), latency_ms=todouble(j.latency_ms)
+| where service in ("products-frontend", "products-backend")
+| summarize Requests=count(), AvgLatencyMs=avg(latency_ms), P95LatencyMs=percentile(latency_ms, 95), Errors=countif(status >= 500) by service, path
+| order by Errors desc, P95LatencyMs desc
+
+// 10. Possibile confronto OperationId tra request e dependency
+AppRequests
+| where TimeGenerated > ago(2h)
+| where Url has "/products"
+| project TimeGenerated, Type="request", AppRoleName, Name, ResultCode, Success, DurationMs, OperationId
+| union (
+    AppDependencies
+    | where TimeGenerated > ago(2h)
+    | where Data has "/api/products" or Name has "/api/products"
+    | project TimeGenerated, Type="dependency", AppRoleName, Name, ResultCode, Success, DurationMs, OperationId
+)
+| order by OperationId asc, TimeGenerated asc

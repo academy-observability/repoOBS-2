@@ -1,0 +1,211 @@
+# UD17 v5.7_1 - Products observability release
+# Build immagini FE/BE strumentate con Azure Monitor OpenTelemetry,
+# push in ACR e update delle Container Apps esistenti create in UD16.
+
+trigger: none
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureServiceConnection: 'sc-obs-azure-rg'
+  resourceGroupName: 'NOME_RESOURCE_GROUP'
+  acrName: 'NOME_ACR'
+  backendContainerAppName: 'NOME_ACA_BACKEND'
+  frontendContainerAppName: 'NOME_ACA_FRONTEND'
+
+  backendRepository: 'obsapp-products-backend'
+  frontendRepository: 'obsapp-products-frontend'
+
+  backendPort: '8000'
+  frontendPort: '8000'
+  sourceRoot: 'work/UD17/src/app_products_observable'
+  imageTag: '$(Build.BuildId)'
+
+  # Creare una variabile pipeline segreta con questo nome oppure sostituire
+  # temporaneamente il valore per il laboratorio. Non committare segreti reali.
+  appInsightsConnectionString: '$(APPLICATIONINSIGHTS_CONNECTION_STRING)'
+
+stages:
+- stage: Validate
+  displayName: '1 - Validate observability prerequisites'
+  jobs:
+  - job: ValidateResources
+    displayName: 'Validate source, App Insights variable and ACA resources'
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: 'Validate source and Azure resources'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -euo pipefail
+          fail() { echo "##vso[task.logissue type=error]$1"; exit 1; }
+          check_value() {
+            local name="$1"; local value="$2"
+            if [[ -z "$value" || "$value" == NOME_* || "$value" == INSERIRE_* || "$value" == '$('* ]]; then
+              fail "Valorizzare la variabile ${name}. Valore corrente: ${value}"
+            fi
+          }
+          check_value resourceGroupName "$(resourceGroupName)"
+          check_value acrName "$(acrName)"
+          check_value backendContainerAppName "$(backendContainerAppName)"
+          check_value frontendContainerAppName "$(frontendContainerAppName)"
+          check_value appInsightsConnectionString "$(appInsightsConnectionString)"
+
+          SOURCE_ROOT="$(Build.SourcesDirectory)/$(sourceRoot)"
+          [[ -f "$SOURCE_ROOT/backend/Dockerfile" ]] || fail "Dockerfile backend non trovato."
+          [[ -f "$SOURCE_ROOT/frontend/Dockerfile" ]] || fail "Dockerfile frontend non trovato."
+          [[ -f "$SOURCE_ROOT/backend/app.py" ]] || fail "backend/app.py non trovato."
+          [[ -f "$SOURCE_ROOT/frontend/app.py" ]] || fail "frontend/app.py non trovato."
+          python -m compileall -q "$SOURCE_ROOT/backend" "$SOURCE_ROOT/frontend"
+          docker version >/dev/null
+
+          az group show --name "$(resourceGroupName)" --output none
+          az acr show --name "$(acrName)" --resource-group "$(resourceGroupName)" --output none
+          az containerapp show --name "$(backendContainerAppName)" --resource-group "$(resourceGroupName)" --output none
+          az containerapp show --name "$(frontendContainerAppName)" --resource-group "$(resourceGroupName)" --output none
+          echo "Prerequisiti UD17 verificati. Tag osservabile: $(imageTag)"
+
+- stage: BuildAndPush
+  displayName: '2 - Build and push observable product images'
+  dependsOn: Validate
+  condition: succeeded()
+  jobs:
+  - job: BuildImages
+    displayName: 'Build FE/BE products with OpenTelemetry'
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: 'Docker build and push to ACR'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -euo pipefail
+          SOURCE_ROOT="$(Build.SourcesDirectory)/$(sourceRoot)"
+          ACR_LOGIN_SERVER=$(az acr show --name "$(acrName)" --resource-group "$(resourceGroupName)" --query loginServer -o tsv)
+          BACKEND_IMAGE="${ACR_LOGIN_SERVER}/$(backendRepository):$(imageTag)"
+          FRONTEND_IMAGE="${ACR_LOGIN_SERVER}/$(frontendRepository):$(imageTag)"
+          echo "Backend image: $BACKEND_IMAGE"
+          echo "Frontend image: $FRONTEND_IMAGE"
+          az acr login --name "$(acrName)"
+          docker build --file "$SOURCE_ROOT/backend/Dockerfile" --tag "$BACKEND_IMAGE" "$SOURCE_ROOT/backend"
+          docker push "$BACKEND_IMAGE"
+          docker build --file "$SOURCE_ROOT/frontend/Dockerfile" --tag "$FRONTEND_IMAGE" "$SOURCE_ROOT/frontend"
+          docker push "$FRONTEND_IMAGE"
+          az acr repository show-tags --name "$(acrName)" --repository "$(backendRepository)" --orderby time_desc --top 5 -o table
+          az acr repository show-tags --name "$(acrName)" --repository "$(frontendRepository)" --orderby time_desc --top 5 -o table
+
+- stage: DeployBackend
+  displayName: '3 - Update backend with Application Insights telemetry'
+  dependsOn: BuildAndPush
+  condition: succeeded()
+  jobs:
+  - job: DeployBackendJob
+    displayName: 'Deploy observable products backend'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Update backend ACA'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -euo pipefail
+          ACR_LOGIN_SERVER=$(az acr show --name "$(acrName)" --resource-group "$(resourceGroupName)" --query loginServer -o tsv)
+          BACKEND_IMAGE="${ACR_LOGIN_SERVER}/$(backendRepository):$(imageTag)"
+          az containerapp revision set-mode --name "$(backendContainerAppName)" --resource-group "$(resourceGroupName)" --mode single --output none
+          az containerapp ingress update --name "$(backendContainerAppName)" --resource-group "$(resourceGroupName)" --type internal --target-port "$(backendPort)" --transport auto --output none
+          az containerapp update \
+            --name "$(backendContainerAppName)" \
+            --resource-group "$(resourceGroupName)" \
+            --image "$BACKEND_IMAGE" \
+            --set-env-vars \
+              SERVICE_NAME=products-backend \
+              OTEL_SERVICE_NAME=products-backend \
+              APP_ENV=aca-observable \
+              APP_VERSION="$(imageTag)" \
+              PORT="$(backendPort)" \
+              SLOW_DELAY_SECONDS=2.5 \
+              APPLICATIONINSIGHTS_CONNECTION_STRING="$(appInsightsConnectionString)" \
+            --output none
+          az containerapp revision list --name "$(backendContainerAppName)" --resource-group "$(resourceGroupName)" --query '[].{revision:name,active:properties.active,health:properties.healthState,image:properties.template.containers[0].image}' -o table
+
+- stage: DeployFrontendAndVerify
+  displayName: '4 - Update frontend and generate observable traffic'
+  dependsOn: DeployBackend
+  condition: succeeded()
+  jobs:
+  - job: DeployFrontendJob
+    displayName: 'Deploy frontend and run smoke tests'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Update frontend ACA and smoke test products'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -euo pipefail
+          fail() { echo "##vso[task.logissue type=error]$1"; exit 1; }
+          ACR_LOGIN_SERVER=$(az acr show --name "$(acrName)" --resource-group "$(resourceGroupName)" --query loginServer -o tsv)
+          FRONTEND_IMAGE="${ACR_LOGIN_SERVER}/$(frontendRepository):$(imageTag)"
+          BACKEND_FQDN=$(az containerapp show --name "$(backendContainerAppName)" --resource-group "$(resourceGroupName)" --query properties.configuration.ingress.fqdn -o tsv)
+          [[ -n "$BACKEND_FQDN" ]] || fail "FQDN backend non disponibile."
+          BACKEND_URL="https://${BACKEND_FQDN}"
+          az containerapp revision set-mode --name "$(frontendContainerAppName)" --resource-group "$(resourceGroupName)" --mode single --output none
+          az containerapp ingress update --name "$(frontendContainerAppName)" --resource-group "$(resourceGroupName)" --type external --target-port "$(frontendPort)" --transport auto --output none
+          az containerapp update \
+            --name "$(frontendContainerAppName)" \
+            --resource-group "$(resourceGroupName)" \
+            --image "$FRONTEND_IMAGE" \
+            --set-env-vars \
+              SERVICE_NAME=products-frontend \
+              OTEL_SERVICE_NAME=products-frontend \
+              APP_ENV=aca-observable \
+              APP_VERSION="$(imageTag)" \
+              PORT="$(frontendPort)" \
+              BACKEND_URL="$BACKEND_URL" \
+              BACKEND_TIMEOUT_SECONDS=5.0 \
+              APPLICATIONINSIGHTS_CONNECTION_STRING="$(appInsightsConnectionString)" \
+            --output none
+          FRONTEND_FQDN=$(az containerapp show --name "$(frontendContainerAppName)" --resource-group "$(resourceGroupName)" --query properties.configuration.ingress.fqdn -o tsv)
+          FRONTEND_URL="https://${FRONTEND_FQDN}"
+          echo "Frontend URL: $FRONTEND_URL"
+          echo "Backend URL: $BACKEND_URL"
+          wait_for_expected_version() {
+            local url="$1"; local expected="$2"; local out="$3"
+            for attempt in $(seq 1 36); do
+              if curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "$url" > "$out"; then
+                current=$(python -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("version", ""))' "$out" 2>/dev/null || true)
+                [[ "$current" == "$expected" ]] && { echo "Versione $expected disponibile."; return 0; }
+                echo "Versione corrente: ${current:-non disponibile}; attesa: $expected"
+              fi
+              sleep 10
+            done
+            cat "$out" 2>/dev/null || true
+            fail "La nuova versione osservabile non è disponibile."
+          }
+          wait_ok() {
+            local url="$1"; local label="$2"; local out="$3"
+            for attempt in $(seq 1 24); do
+              if curl --fail --silent --show-error --connect-timeout 5 --max-time 15 "$url" > "$out"; then echo "$label OK"; return 0; fi
+              sleep 10
+            done
+            fail "Timeout su $label: $url"
+          }
+          wait_for_expected_version "$FRONTEND_URL/version" "$(imageTag)" /tmp/version.json
+          wait_ok "$FRONTEND_URL/health" "health" /tmp/health.json
+          wait_ok "$FRONTEND_URL/ready" "ready" /tmp/ready.json
+          wait_ok "$FRONTEND_URL/products" "products" /tmp/products.json
+          wait_ok "$FRONTEND_URL/products/slow" "products slow" /tmp/slow.json
+          curl --silent --show-error --output /tmp/error.json --write-out "%{http_code}" "$FRONTEND_URL/products/error" | grep -q '^500$' || fail "products/error deve restituire 500 controllato."
+          wait_ok "$FRONTEND_URL/" "home catalogo" /tmp/home.html
+          grep -F 'notebook' /tmp/products.json >/dev/null || fail "Catalogo JSON senza notebook."
+          grep -F 'Catalogo prodotti' /tmp/home.html >/dev/null || fail "Home senza Catalogo prodotti."
+          echo "Smoke test osservabili completati. Generare ora traffico aggiuntivo e aprire Application Insights/Log Analytics."
