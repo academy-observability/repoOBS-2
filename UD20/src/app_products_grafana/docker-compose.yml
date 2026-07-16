@@ -1,0 +1,92 @@
+name: obs-ud20-products
+
+services:
+  backend-products:
+    build:
+      context: ./backend
+    container_name: ud20-products-backend
+    environment:
+      SERVICE_NAME: products-backend
+      APP_VERSION: 1.4.0-local-products-dashboard
+      APP_ENV: local-compose
+      PORT: 8000
+      SLOW_DELAY_SECONDS: 2.5
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports:
+      - "8020:8000"
+    networks:
+      - app-net
+      - obs-net
+    depends_on:
+      - jaeger
+
+  frontend-products:
+    build:
+      context: ./frontend
+    container_name: ud20-products-frontend
+    environment:
+      SERVICE_NAME: products-frontend
+      APP_VERSION: 1.4.0-local-products-dashboard
+      APP_ENV: local-compose
+      PORT: 8080
+      BACKEND_URL: http://backend-products:8000
+      BACKEND_TIMEOUT_SECONDS: 5
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports:
+      - "8120:8080"
+    networks:
+      - app-net
+      - obs-net
+    depends_on:
+      - backend-products
+      - jaeger
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: ud20-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - obs-net
+    depends_on:
+      - backend-products
+      - frontend-products
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: ud20-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - obs-net
+    depends_on:
+      - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.76.0
+    container_name: ud20-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - obs-net
+
+networks:
+  app-net:
+    name: obs-ud20-app-net
+  obs-net:
+    name: obs-ud20-obs-net
