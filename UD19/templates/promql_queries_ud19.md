@@ -58,9 +58,9 @@ histogram_quantile(
 ## Filtri utili
 
 ```promql
-sum by (path, status) (app_http_requests_total{service="frontend"})
+sum by (path, status) (app_http_requests_total{service="product-frontend"})
 ```
 
 ```promql
-sum by (path, status) (app_http_requests_total{service="backend"})
+sum by (path, status) (app_http_requests_total{service="product-backend"})
 ```
