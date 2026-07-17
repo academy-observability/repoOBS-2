@@ -1,0 +1,13 @@
+# ESEMPIO NON ATTIVO: non si trova nella cartella provisioning/alerting.
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: UD21 - Webhook locale
+    receivers:
+      - uid: ud21-webhook-local
+        type: webhook
+        settings:
+          url: http://webhook-receiver:5001/grafana-alert
+          httpMethod: POST
+        disableResolveMessage: false

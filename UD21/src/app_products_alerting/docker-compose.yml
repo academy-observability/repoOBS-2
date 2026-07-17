@@ -1,0 +1,151 @@
+name: obs-ud21-products
+
+services:
+  backend-products:
+    build:
+      context: ./backend
+    container_name: ud21-products-backend
+    environment:
+      SERVICE_NAME: products-backend
+      APP_VERSION: 1.6.0-local-products-alerting
+      APP_ENV: local-compose
+      PORT: 8000
+      SLOW_DELAY_SECONDS: 2.5
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports:
+      - "8021:8000"
+    networks:
+      - app-net
+      - obs-net
+    depends_on:
+      - jaeger
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  frontend-products:
+    build:
+      context: ./frontend
+    container_name: ud21-products-frontend
+    environment:
+      SERVICE_NAME: products-frontend
+      APP_VERSION: 1.6.0-local-products-alerting
+      APP_ENV: local-compose
+      PORT: 8080
+      BACKEND_URL: http://backend-products:8000
+      BACKEND_TIMEOUT_SECONDS: 5
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports:
+      - "8121:8080"
+    networks:
+      - app-net
+      - obs-net
+    depends_on:
+      backend-products:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: ud21-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=2d"
+    volumes:
+      # Configurazione versionata: bind mount read-only.
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Dati runtime: named volume persistente.
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - obs-net
+    depends_on:
+      frontend-products:
+        condition: service_healthy
+      backend-products:
+        condition: service_healthy
+
+  webhook-receiver:
+    build:
+      context: ./webhook-receiver
+    container_name: ud21-webhook-receiver
+    environment:
+      PORT: 5001
+      EVENT_FILE: /data/events.jsonl
+      MAX_EVENTS: 500
+    volumes:
+      # Conserva test, firing e resolved anche dopo docker compose down.
+      - webhook-data:/data
+    ports:
+      - "5001:5001"
+    networks:
+      - obs-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: ud21-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      # Database SQLite e stato creato dalla GUI: alert rule, contact point, folder.
+      - grafana-data:/var/lib/grafana
+      # Configurazione e dashboard versionate: bind mount read-only.
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - obs-net
+    depends_on:
+      prometheus:
+        condition: service_started
+      webhook-receiver:
+        condition: service_healthy
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.76.0
+    container_name: ud21-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - obs-net
+    # Nota: Jaeger all-in-one usa storage in memoria in questa UD.
+    # Le trace non persistono alla ricreazione del container.
+
+networks:
+  app-net:
+    name: obs-ud21-app-net
+  obs-net:
+    name: obs-ud21-obs-net
+
+volumes:
+  grafana-data:
+    name: obs-ud21-grafana-data
+  prometheus-data:
+    name: obs-ud21-prometheus-data
+  webhook-data:
+    name: obs-ud21-webhook-data
