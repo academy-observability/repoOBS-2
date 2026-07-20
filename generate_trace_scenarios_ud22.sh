@@ -1,0 +1,9 @@
+setuptools==80.9.0
+flask==3.0.0
+prometheus-client==0.20.0
+opentelemetry-api==1.25.0
+opentelemetry-sdk==1.25.0
+opentelemetry-exporter-otlp-proto-grpc==1.25.0
+opentelemetry-instrumentation-flask==0.46b0
+opentelemetry-instrumentation-requests==0.46b0
+requests==2.32.3
