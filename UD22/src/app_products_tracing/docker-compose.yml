@@ -1,0 +1,155 @@
+name: obs-ud22-products
+
+services:
+  backend-products:
+    build:
+      context: ./backend
+    container_name: ud22-products-backend
+    environment:
+      SERVICE_NAME: products-backend
+      APP_VERSION: 1.7.0-products-tracing
+      APP_ENV: local-compose
+      PORT: 8000
+      SLOW_DELAY_SECONDS: 2.5
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports:
+      - "8022:8000"
+    networks:
+      - app-net
+      - obs-net
+    depends_on:
+      - jaeger
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  frontend-products:
+    build:
+      context: ./frontend
+    container_name: ud22-products-frontend
+    environment:
+      SERVICE_NAME: products-frontend
+      APP_VERSION: 1.7.0-products-tracing
+      APP_ENV: local-compose
+      PORT: 8080
+      BACKEND_URL: http://backend-products:8000
+      BACKEND_TIMEOUT_SECONDS: 5
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports:
+      - "8122:8080"
+    networks:
+      - app-net
+      - obs-net
+    depends_on:
+      backend-products:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  prepare-jaeger-data:
+    image: jaegertracing/all-in-one:1.76.0
+    container_name: ud22-prepare-jaeger-data
+    user: root
+    # L'immagine Jaeger definisce un ENTRYPOINT proprio. Per questo servizio
+    # one-shot lo sovrascriviamo esplicitamente e usiamo la shell solo per
+    # preparare il volume Badger con i permessi dell'utente Jaeger (UID 10001).
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /badger/data/keys /badger/data/values
+        touch /badger/data/.initialized
+        chown -R 10001:10001 /badger/data
+    volumes:
+      - jaeger-data:/badger
+    networks:
+      - obs-net
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.76.0
+    container_name: ud22-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+      # Badger è il database embedded usato da Jaeger nel laboratorio.
+      SPAN_STORAGE_TYPE: badger
+      BADGER_EPHEMERAL: "false"
+      BADGER_DIRECTORY_VALUE: /badger/data/values
+      BADGER_DIRECTORY_KEY: /badger/data/keys
+      BADGER_SPAN_STORE_TTL: 72h0m0s
+    volumes:
+      # I file del database Badger sopravvivono alla ricreazione del container.
+      - jaeger-data:/badger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+      - "14269:14269"
+    networks:
+      - obs-net
+    depends_on:
+      prepare-jaeger-data:
+        condition: service_completed_successfully
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: ud22-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=2d"
+    volumes:
+      # File di configurazione versionato: bind mount read-only.
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Campioni della TSDB: named volume persistente.
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - obs-net
+    depends_on:
+      frontend-products:
+        condition: service_healthy
+      backend-products:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: ud22-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      # Database SQLite e stato della GUI.
+      - grafana-data:/var/lib/grafana
+      # Configurazioni e dashboard versionate: bind mount read-only.
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - obs-net
+    depends_on:
+      - prometheus
+
+networks:
+  app-net:
+    name: obs-ud22-app-net
+  obs-net:
+    name: obs-ud22-obs-net
+
+volumes:
+  jaeger-data:
+    name: obs-ud22-jaeger-data
+  prometheus-data:
+    name: obs-ud22-prometheus-data
+  grafana-data:
+    name: obs-ud22-grafana-data
