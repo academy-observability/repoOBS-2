@@ -1,5 +1,5 @@
 # UD27 — Concetti
-# Statistica descrittiva e gruppi
+# Statistica descrittiva e gruppi 
 
 ## 1. La domanda della giornata
 
