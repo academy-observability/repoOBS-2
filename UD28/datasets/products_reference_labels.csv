@@ -1,0 +1,21 @@
+observation_id,reference_label,reference_reason_code,reference_reason,label_source
+eval-001,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-002,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-003,normal,expected_transient_latency,Picco transitorio di latenza considerato accettabile dal service owner per questo scenario,service_review
+eval-004,anomaly,injected_latency,Degradazione di latenza introdotta intenzionalmente durante un test controllato,controlled_test
+eval-005,anomaly,unexpected_error,Risposta HTTP 500 inattesa confermata durante la revisione tecnica del caso,incident_review
+eval-006,anomaly,injected_latency,Degradazione di latenza introdotta intenzionalmente durante un test controllato,controlled_test
+eval-007,anomaly,unexpected_error,Risposta HTTP 500 inattesa confermata durante la revisione tecnica del caso,incident_review
+eval-008,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-009,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-010,normal,expected_high_but_valid,Durata elevata ma ancora considerata accettabile dal service owner per questo scenario,service_review
+eval-011,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-012,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-013,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-014,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-015,anomaly,injected_latency,Degradazione di latenza introdotta intenzionalmente durante un test controllato,controlled_test
+eval-016,normal,expected_transient_latency,Picco transitorio di latenza considerato accettabile dal service owner per questo scenario,service_review
+eval-017,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-018,normal,expected_high_but_valid,Durata elevata ma ancora considerata accettabile dal service owner per questo scenario,service_review
+eval-019,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
+eval-020,normal,expected_behavior,Durata e status coerenti con il comportamento previsto,service_review
