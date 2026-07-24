@@ -1,0 +1,8 @@
+duration_ms,status_code,reference_label
+150,200,normal
+160,200,normal
+210,200,normal
+220,200,normal
+280,200,anomaly
+300,200,anomaly
+165,500,anomaly

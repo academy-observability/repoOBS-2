@@ -1,0 +1,41 @@
+observation_id,reference_label,reference_reason_code,reference_reason,label_source
+test-001,normal,expected_transient_latency,Picco transitorio di latenza considerato accettabile dal service owner nello scenario validato,service_review
+test-002,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-003,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-004,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-005,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-006,anomaly,injected_latency,Degradazione di latenza introdotta intenzionalmente durante un test controllato,controlled_test
+test-007,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-008,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-009,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-010,anomaly,unexpected_error,Risposta HTTP 500 inattesa confermata durante la revisione tecnica,incident_review
+test-011,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-012,normal,expected_transient_latency,Picco transitorio di latenza considerato accettabile dal service owner nello scenario validato,service_review
+test-013,anomaly,injected_latency,Degradazione di latenza introdotta intenzionalmente durante un test controllato,controlled_test
+test-014,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-015,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-016,anomaly,validated_issue_not_visible_in_selected_features,Comportamento applicativo inatteso confermato da log/trace; duration e status non bastano a descriverlo,trace_review
+test-017,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-018,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-019,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-020,anomaly,injected_latency,Degradazione di latenza introdotta intenzionalmente durante un test controllato,controlled_test
+test-021,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-022,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-023,anomaly,unexpected_error,Risposta HTTP 500 inattesa confermata durante la revisione tecnica,incident_review
+test-024,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-025,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-026,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-027,anomaly,injected_latency,Degradazione di latenza introdotta intenzionalmente durante un test controllato,controlled_test
+test-028,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-029,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-030,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-031,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-032,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-033,anomaly,validated_issue_not_visible_in_selected_features,Comportamento applicativo inatteso confermato da log/trace; duration e status non bastano a descriverlo,trace_review
+test-034,normal,expected_transient_latency,Picco transitorio di latenza considerato accettabile dal service owner nello scenario validato,service_review
+test-035,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-036,anomaly,unexpected_error,Risposta HTTP 500 inattesa confermata durante la revisione tecnica,incident_review
+test-037,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-038,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-039,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
+test-040,normal,expected_behavior,Durata e status coerenti con il comportamento validato,service_review
