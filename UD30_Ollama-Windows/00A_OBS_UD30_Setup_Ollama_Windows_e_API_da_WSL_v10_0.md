@@ -172,7 +172,7 @@ Usare il fallback NAT quando:
 - mirrored non è disponibile;
 - una policy aziendale lo impedisce;
 - mirrored non funziona correttamente sul PC;
-- il docente ha scelto di non modificare `.wslconfig`.
+- non si vuol creare/modificare il file `.wslconfig`.
 
 In modalità NAT, `127.0.0.1` dentro WSL indica WSL, non il servizio Windows.
 
