@@ -2,7 +2,7 @@
 
 ## Scopo
 
-La configurazione ufficiale della UD30 è:
+La configurazione della UD30 per Ollama installato su Windows è:
 
 ```text
 Ollama e modelli → Windows
