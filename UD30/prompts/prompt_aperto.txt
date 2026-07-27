@@ -1,0 +1,5 @@
+Analizza il seguente incidente e indicane la causa.
+
+EVIDENCE PACKET
+
+{{EVIDENCE_PACKET}}

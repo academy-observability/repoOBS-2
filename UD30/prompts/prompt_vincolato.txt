@@ -1,0 +1,22 @@
+Analizza esclusivamente le evidenze riportate nell'evidence packet.
+
+Produci queste sezioni:
+
+1. FATTI OSSERVATI
+2. IPOTESI ORDINATE PER PLAUSIBILITÀ
+3. EVIDENZE CHE SUPPORTANO OGNI IPOTESI
+4. INFORMAZIONI MANCANTI
+5. VERIFICHE SUCCESSIVE ORDINATE
+6. LIVELLO DI CERTEZZA DELLA CONCLUSIONE
+
+Regole:
+
+- non presentare come certa una causa non dimostrata;
+- non aggiungere metriche, eventi o modifiche non presenti;
+- distingui una correlazione temporale da una relazione causale;
+- segnala esplicitamente quando un'ipotesi richiede ulteriori dati;
+- usa un linguaggio tecnico ma comprensibile.
+
+EVIDENCE PACKET
+
+{{EVIDENCE_PACKET}}

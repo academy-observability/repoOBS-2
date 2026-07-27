@@ -1,0 +1,2 @@
+timestamp,run_id,model,prompt_type,status,client_latency_ms,prompt_tokens,output_tokens,quality_status
+2026-07-25T17:45:00,checkout-01,llama3.2:1b,constrained,success,6210,455,159,partially_supported

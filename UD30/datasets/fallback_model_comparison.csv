@@ -1,0 +1,4 @@
+timestamp,model_requested,model_effective,status,client_latency_ms,ollama_total_ms,load_ms,prompt_tokens,output_tokens,response_length,response_file,error
+2026-07-25T15:10:00,llama3.2:1b,llama3.2:1b,success,6820,6680,40,590,173,1342,runtime/model_comparison_responses/llama3.2_1b.md,
+2026-07-25T15:10:20,llama3.2:3b,llama3.2:3b,success,12460,12180,4800,590,210,1795,runtime/model_comparison_responses/llama3.2_3b.md,
+2026-07-25T15:10:36,gemma3:1b,gemma3:1b,success,5240,5110,1400,605,142,1104,runtime/model_comparison_responses/gemma3_1b.md,

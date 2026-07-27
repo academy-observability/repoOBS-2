@@ -1,0 +1,7 @@
+timestamp,run_id,model,prompt_type,status,client_latency_ms,ollama_total_ms,load_ms,prompt_eval_ms,generation_ms,prompt_tokens,output_tokens,response_length,response_file,error
+2026-07-25T14:50:01,run-01-open,llama3.2:1b,open,success,7820,7600,2200,310,5090,470,108,694,fallback/risposte_confronto/ollama_prompt_aperto_esempio.md,
+2026-07-25T14:50:12,run-01-constrained,llama3.2:1b,constrained,success,6940,6800,45,420,6280,590,176,1375,fallback/risposte_confronto/ollama_prompt_vincolato_esempio.md,
+2026-07-25T14:50:21,run-02-open,llama3.2:1b,open,success,5580,5450,36,315,5040,470,105,670,fallback/risposte_confronto/ollama_prompt_aperto_esempio.md,
+2026-07-25T14:50:28,run-02-constrained,llama3.2:1b,constrained,success,6680,6510,38,430,6000,590,170,1320,fallback/risposte_confronto/ollama_prompt_vincolato_esempio.md,
+2026-07-25T14:50:36,run-03-open,llama3.2:1b,open,success,5720,5600,35,318,5190,470,109,711,fallback/risposte_confronto/ollama_prompt_aperto_esempio.md,
+2026-07-25T14:50:43,run-03-constrained,llama3.2:1b,constrained,success,6820,6680,37,425,6140,590,173,1342,fallback/risposte_confronto/ollama_prompt_vincolato_esempio.md,

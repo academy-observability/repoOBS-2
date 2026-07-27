@@ -1,0 +1,2 @@
+response_file,model,prompt_type,quality_status,facts_hypotheses_separated,unsupported_claims,useful_checks,review_note
+example.md,llama3.2:1b,constrained,partially_supported,yes,1,yes,Compilare con la valutazione reale
