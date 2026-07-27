@@ -53,7 +53,6 @@ Non installare una seconda istanza di Ollama dentro WSL.
 8. `05_OBS_UD30_LAB_guidato_Ollama_da_Python_e_Telemetria_v10_0.md`
 9. `06_OBS_UD30_MINI_ATTIVITA_Fatti_Ipotesi_Verifiche_v10_0.md`
 10. `07_OBS_UD30_LAB_autonomo_Handoff_Incidente_con_LLM_v10_0.md`
-11. `08_OBS_UD30_Raccordo_Finale_AI_Assisted_Observability_v10_0.md`
 
 ## Durata indicativa
 
