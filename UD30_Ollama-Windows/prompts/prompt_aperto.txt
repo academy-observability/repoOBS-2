@@ -1,0 +1,4 @@
+Analizza l'incidente descritto nell'evidence packet. Indica la causa più probabile e suggerisci che cosa fare.
+
+EVIDENCE PACKET:
+[INCOLLARE QUI]

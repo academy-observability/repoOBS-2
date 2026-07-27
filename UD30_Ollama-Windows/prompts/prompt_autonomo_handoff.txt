@@ -1,0 +1,16 @@
+Usa esclusivamente l'evidence packet fornito.
+
+Prepara una bozza di handoff tecnico con:
+
+- sintesi di massimo 5 righe;
+- fatti osservati con ID;
+- ipotesi ordinate per priorità;
+- informazioni mancanti;
+- verifiche concrete;
+- azioni immediate a basso rischio;
+- livello di confidenza motivato.
+
+Non presentare una root cause come certa se non è dimostrata. Non inventare componenti o dati.
+
+EVIDENCE PACKET:
+[INCOLLARE QUI]

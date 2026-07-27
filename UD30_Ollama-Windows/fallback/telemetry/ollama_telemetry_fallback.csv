@@ -1,0 +1,5 @@
+run_id,timestamp,model,prompt_name,success,client_duration_ms,total_duration_ms,load_duration_ms,prompt_eval_count,eval_count,prompt_eval_duration_ms,eval_duration_ms,done_reason,error
+1,2026-07-25T10:00:00+02:00,llama3.2:1b,aperto,True,4820.4,4680.2,2100.5,215,96,420.3,2040.4,stop,
+2,2026-07-25T10:01:00+02:00,llama3.2:1b,vincolato,True,3210.8,3095.1,42.8,298,142,610.1,2280.7,stop,
+3,2026-07-25T10:02:00+02:00,llama3.2:1b,vincolato,True,3055.6,2940.9,35.4,298,136,596.5,2140.8,stop,
+4,2026-07-25T10:03:00+02:00,llama3.2:1b,breve,True,1588.2,1490.0,31.2,72,48,155.0,960.3,stop,
