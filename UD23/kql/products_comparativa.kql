@@ -1,0 +1,26 @@
+// Richieste products negli ultimi 30 minuti
+requests
+| where timestamp > ago(30m)
+| where url has "/products"
+| summarize requests=count(), avgDurationMs=avg(duration), p95Duration=percentile(duration, 95) by name, resultCode
+| order by requests desc
+
+// Dipendenze frontend -> backend
+ dependencies
+| where timestamp > ago(30m)
+| where name has "products" or target has "backend"
+| project timestamp, name, target, resultCode, duration, operation_Id
+| order by timestamp desc
+
+// Eccezioni applicative
+exceptions
+| where timestamp > ago(30m)
+| project timestamp, type, outerMessage, operation_Id
+| order by timestamp desc
+
+// Log Container Apps
+ContainerAppConsoleLogs_CL
+| where TimeGenerated > ago(30m)
+| where Log_s has "products"
+| project TimeGenerated, ContainerAppName_s, RevisionName_s, Log_s
+| order by TimeGenerated desc
