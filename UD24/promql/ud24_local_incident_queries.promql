@@ -1,0 +1,21 @@
+# UD24 - PromQL incident investigation
+
+# 1. Target up/down
+up
+
+# 2. Request rate per service/path/status
+sum(rate(http_requests_total[2m])) by (service, path, status)
+
+# 3. Error rate 5xx
+sum(rate(http_requests_total{status=~"5.."}[2m])) by (service, path, status)
+
+# 4. Request rate solo catalogo prodotti
+sum(rate(http_requests_total{path=~"/products|/api/products|/products/slow|/api/products/slow|/products/error|/api/products/error"}[2m])) by (service, path, status)
+
+# 5. Latenza media
+sum(rate(http_request_duration_seconds_sum[5m])) by (service, path)
+/
+sum(rate(http_request_duration_seconds_count[5m])) by (service, path)
+
+# 6. p95 latenza
+histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service, path))

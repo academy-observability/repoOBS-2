@@ -1,0 +1,50 @@
+// UD24 - Query cloud incident investigation
+// Sostituire intervallo, nomi app e filtri se necessario.
+
+// 1. Richieste products per endpoint, status e latenza
+AppRequests
+| where TimeGenerated > ago(1h)
+| where Url has "/products" or Name has "products"
+| summarize requests=count(), avg_ms=avg(DurationMs), p95_ms=percentile(DurationMs, 95) by bin(TimeGenerated, 5m), Name, ResultCode
+| order by TimeGenerated asc
+
+// 2. Errori 5xx
+AppRequests
+| where TimeGenerated > ago(1h)
+| where ResultCode startswith "5"
+| project TimeGenerated, AppRoleName, Name, Url, ResultCode, Success, DurationMs, OperationId
+| order by TimeGenerated desc
+
+// 3. Dipendenze frontend verso backend
+AppDependencies
+| where TimeGenerated > ago(1h)
+| where Target has "backend" or Name has "products"
+| project TimeGenerated, AppRoleName, Name, Target, ResultCode, Success, DurationMs, OperationId
+| order by TimeGenerated desc
+
+// 4. Lentezza su products/slow
+AppRequests
+| where TimeGenerated > ago(1h)
+| where Url has "/products/slow" or Name has "products/slow"
+| summarize requests=count(), avg_ms=avg(DurationMs), p95_ms=percentile(DurationMs, 95) by bin(TimeGenerated, 5m), ResultCode
+| order by TimeGenerated asc
+
+// 5. Eccezioni
+AppExceptions
+| where TimeGenerated > ago(1h)
+| project TimeGenerated, AppRoleName, Type, Message, OperationId
+| order by TimeGenerated desc
+
+// 6. Trace applicativi
+AppTraces
+| where TimeGenerated > ago(1h)
+| where Message has "products" or Message has "request_id"
+| project TimeGenerated, AppRoleName, SeverityLevel, Message, OperationId
+| order by TimeGenerated desc
+
+// 7. Log container ACA su stdout/stderr
+ContainerAppConsoleLogs_CL
+| where TimeGenerated > ago(1h)
+| where Log_s has "products" or Log_s has "request_id" or Log_s has "ERROR"
+| project TimeGenerated, ContainerAppName_s, RevisionName_s, Log_s
+| order by TimeGenerated desc
